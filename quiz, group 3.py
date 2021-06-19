@@ -1,66 +1,42 @@
 import requests
 import json
 import sqlite3
-
-
-city = 'Tbilisi'
-key = 'b06691354e7612207b24cf257a8ddfe9'
-payload = {'q': city, 'appid': key, 'units': 'metric'}
-
-r = requests.get('http://api.openweathermap.org/data/2.5/weather', params=payload)
-as_dict = json.loads(r.text)
-
-pretty_json = json.dumps(as_dict, indent=4)
-
-with open('data.json', 'w') as f:
-    # json.dump(a, f, indent=4)
-    f.write(pretty_json)
-
-# requests functions
-
-# print(r.headers)
-# print(r.status_code)
-# print(r.content)
-# print(r.text)
-
-
-# additional information
-# print(as_dict['main']['temp_max'])  
-# print(as_dict["sys"]["id"])  
-
-
-# add data to DB
-main = as_dict['main']
-temp = main['temp']
-feels_like = main['feels_like']
-temp_min = main['temp_min']
-temp_max = main['temp_max']
-
-row = [temp, feels_like, temp_min, temp_max]
-# create table
-conn = sqlite3.connect('weather_basa.sqlite')
+conn = sqlite3.connect('cities1.sqlite3')
 cursor = conn.cursor()
+cursor.execute(''' CREATE TABLE cities1 (Name VARCHAR(50), 
+Capital VARCHAR(50),
+Language VARCHAR(50), 
+ 
+region VARCHAR(50))''')
 
-cursor.execute('''
-                CREATE TABLE IF NOT EXISTS weather(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                temp  FLOAT,
-                feels_like FLOAT,
-                temp_min FLOAT ,
-                temp_max FLOAT
-                );
-''')
-conn.commit()
 
-cursor.execute('''
-                INSERT INTO weather (temp, feels_like, temp_min, temp_max)
-                VALUES(?,?,?,?)
-''', row)
-conn.commit()
 
-conn.close()
-# მონაცემთა ბაზაში ინახება ინფორმაცია ამჟამინდელი ტემპერატურის,
-#  ტენიანობის მაქსიმალური და მინიმალური ტემპერატურების შესახებ.
+resp = requests.get('https://restcountries.eu/rest/v2/lang/es')
+print(resp.status_code)
+print(resp.url)
+print(resp.content)
+as_dict = json.loads(resp.text)
+with open('data1.json', 'w') as f:
+    json.dump(as_dict, f, indent=4)
+countries = []
+for each in as_dict:
+    names = each['name']
+    capi = each['capital']
+    
+    lang = each['languages'][0]['name']
+    re = each['region']
+    column = (names, capi, lang, re)
+    countries.append(column)
+cursor.executemany("INSERT INTO cities1 (Name, Capital, Language, region) VALUES (?, ?, ?, ?)", countries) 
+conn.commit()  
+
+
+print(as_dict[0]["topLevelDomain"])
+print(as_dict[0]["numericCode"])
+        
+print(as_dict[0]["population"])
+# მონაცემთა ბაზაში ინახება ინფორმაცია იმ ქვეყნების სახელების, დედაქალაქების, ენისა და რეგიონის შესახებ, სადაც ოფიციალური ენაა ესპანური.
+
 
 
 
